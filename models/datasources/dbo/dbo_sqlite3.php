@@ -76,7 +76,7 @@ class DboSqlite3 extends DboSource {
 		'primary_key' => array('name' => 'integer primary key autoincrement'),
 		'string' => array('name' => 'varchar', 'limit' => '255'),
 		'text' => array('name' => 'text'),
-		'integer' => array('name' => 'integer', 'limit' => null, 'formatter' => 'intval'),
+		'integer' => array('name' => 'integer', 'limit' => 11, 'formatter' => 'intval'),
 		'float' => array('name' => 'float', 'formatter' => 'floatval'),
 		'datetime' => array('name' => 'datetime', 'format' => 'Y-m-d H:i:s', 'formatter' => 'date'),
 		'timestamp' => array('name' => 'timestamp', 'format' => 'Y-m-d H:i:s', 'formatter' => 'date'),
@@ -231,9 +231,6 @@ class DboSqlite3 extends DboSource {
  * @access public
  */
 	function listSources() {
-		$db = $this->config['database'];
-		$this->config['database'] = basename($this->config['database']);
-
 		$cache = parent::listSources();
 		if ($cache != null) {
 			return $cache;
@@ -250,10 +247,8 @@ class DboSqlite3 extends DboSource {
 			}
 			parent::listSources($tables);
 
-			$this->config['database'] = $db;
 			return $tables;
 		}
-		$this->config['database'] = $db;
 		return array();
 	}
 
@@ -280,12 +275,13 @@ class DboSqlite3 extends DboSource {
 				'length'	=> $this->length($column[0]['type'])
 			);
 			if($column[0]['pk'] == 1) {
+				$colLength = $this->length($column[0]['type']);
 				$fields[$column[0]['name']] = array(
 					'type'		=> $fields[$column[0]['name']]['type'],
 					'null'		=> false,
 					'default'	=> $column[0]['dflt_value'],
 					'key'		=> $this->index['PRI'],
-					'length'	=> 11
+					'length'=> ($colLength != null) ? $colLength : 11
 				);
 			}
 		}
