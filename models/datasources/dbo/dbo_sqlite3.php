@@ -236,7 +236,7 @@ class DboSqlite3 extends DboSource {
 			return $cache;
 		}
 		
-		$result = $this->fetchAll("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;", false);
+		$result = $this->fetchAll("SELECT name FROM sqlite_master WHERE type='table' AND NAME NOT LIKE 'sqlite_%' ORDER BY name;", false);
 
 		if (!$result || empty($result)) {
 			return array();
