@@ -228,6 +228,14 @@ class CsvSourceTestCase extends CakeTestCase {
 		$result = $model->find('all', array('conditions' => array('UserTest.id <' => 3), 'limit' => 1));
 		$expected_ = array($expected[0]);
 		$this->assertEqual($result, $expected_);
+		
+		$result = $model->find('list', array('fields'=>array('UserTest.name')));
+		$expected = array(
+			1 => 'predominant',
+			2 => 'mr_sandman',
+			3 => 'easter_bunny',
+		);
+		$this->assertEqual($result, $expected);
 	}
 
 /**

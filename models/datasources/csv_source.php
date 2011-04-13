@@ -259,9 +259,22 @@ class CsvSource extends DataSource {
 			$allFields = false;
 			$_fieldIndex = array();
 			$index = 0;
+			
+			// handle  Model.field notation
+			$listOfFields = array();
+			foreach ($fields as $field) {
+				if (strpos($field, '.') !== false) {
+					list($alias, $field) = explode('.', $field, 2);
+					if ($alias !== $model->alias) {
+						continue;
+					}
+				}
+				$listOfFields[] = $field;
+			}
+			
 			// generate an index array of all wanted fields
 			foreach($this->fields as $field) {
-				if (in_array($field,  $fields)) {
+				if (in_array($field,  $listOfFields)) {
 					$_fieldIndex[] = $index;
 				}
 				$index++;
