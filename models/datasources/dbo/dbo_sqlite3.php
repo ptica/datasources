@@ -757,4 +757,143 @@ class DboSqlite3 extends DboSource {
 	function hasResult() {
 		return is_object($this->_result);
 	}
+	
+/**
+ * Generate a MySQL Alter Table syntax for the given Schema comparison
+ *
+ * @param array $compare Result of a CakeSchema::compare()
+ * @return array Array of alter statements to make.
+ */
+	function alterSchema($compare, $table = null) {
+		if (!is_array($compare)) {
+			return false;
+		}
+		$out = '';
+		$colList = array();
+		foreach ($compare as $curTable => $types) {
+			$indexes = $tableParameters = $colList = array();
+			if (!$table || $table == $curTable) {
+				$out .= 'ALTER TABLE ' . $this->fullTableName($curTable) . " \n";
+				foreach ($types as $type => $column) {
+					if (isset($column['indexes'])) {
+						$indexes[$type] = $column['indexes'];
+						unset($column['indexes']);
+					}
+					if (isset($column['tableParameters'])) {
+						$tableParameters[$type] = $column['tableParameters'];
+						unset($column['tableParameters']);
+					}
+					switch ($type) {
+						case 'add':
+							foreach ($column as $field => $col) {
+								$col['name'] = $field;
+								$alter = 'ADD ' . $this->buildColumn($col);
+								if (isset($col['after'])) {
+									$alter .= ' AFTER ' . $this->name($col['after']);
+								}
+								$colList[] = $alter;
+							}
+						break;
+						case 'drop':
+							foreach ($column as $field => $col) {
+								$col['name'] = $field;
+								$colList[] = 'DROP ' . $this->name($field);
+							}
+						break;
+						case 'change':
+							foreach ($column as $field => $col) {
+								if (!isset($col['name'])) {
+									$col['name'] = $field;
+								}
+								$colList[] = 'CHANGE ' . $this->name($field) . ' ' . $this->buildColumn($col);
+							}
+						break;
+					}
+				}
+				$colList = array_merge($colList, $this->_alterIndexes($curTable, $indexes));
+				$colList = array_merge($colList, $this->_alterTableParameters($curTable, $tableParameters));
+				$out .= "\t" . join(",\n\t", $colList) . ";\n\n";
+			}
+		}
+		return $out;
+	}
+	
+/**
+ * Generate a MySQL "drop table" statement for the given Schema object
+ *
+ * @param object $schema An instance of a subclass of CakeSchema
+ * @param string $table Optional.  If specified only the table name given will be generated.
+ *                      Otherwise, all tables defined in the schema are generated.
+ * @return string
+ */
+	function dropSchema($schema, $table = null) {
+		if (!is_a($schema, 'CakeSchema')) {
+			trigger_error(__('Invalid schema object', true), E_USER_WARNING);
+			return null;
+		}
+		$out = '';
+		foreach ($schema->tables as $curTable => $columns) {
+			if (!$table || $table == $curTable) {
+				$out .= 'DROP TABLE IF EXISTS ' . $this->fullTableName($curTable) . ";\n";
+			}
+		}
+		return $out;
+	}
+
+/**
+ * Generate MySQL table parameter alteration statementes for a table.
+ *
+ * @param string $table Table to alter parameters for.
+ * @param array $parameters Parameters to add & drop.
+ * @return array Array of table property alteration statementes.
+ * @todo Implement this method.
+ */
+	function _alterTableParameters($table, $parameters) {
+		if (isset($parameters['change'])) {
+			return $this->buildTableParameters($parameters['change']);
+		}
+		return array();
+	}
+
+/**
+ * Generate MySQL index alteration statements for a table.
+ *
+ * @param string $table Table to alter indexes for
+ * @param array $new Indexes to add and drop
+ * @return array Index alteration statements
+ */
+	function _alterIndexes($table, $indexes) {
+		$alter = array();
+		if (isset($indexes['drop'])) {
+			foreach($indexes['drop'] as $name => $value) {
+				$out = 'DROP ';
+				if ($name == 'PRIMARY') {
+					$out .= 'PRIMARY KEY';
+				} else {
+					$out .= 'KEY ' . $name;
+				}
+				$alter[] = $out;
+			}
+		}
+		if (isset($indexes['add'])) {
+			foreach ($indexes['add'] as $name => $value) {
+				$out = 'ADD ';
+				if ($name == 'PRIMARY') {
+					$out .= 'PRIMARY ';
+					$name = null;
+				} else {
+					if (!empty($value['unique'])) {
+						$out .= 'UNIQUE ';
+					}
+				}
+				if (is_array($value['column'])) {
+					$out .= 'KEY '. $name .' (' . implode(', ', array_map(array(&$this, 'name'), $value['column'])) . ')';
+				} else {
+					$out .= 'KEY '. $name .' (' . $this->name($value['column']) . ')';
+				}
+				$alter[] = $out;
+			}
+		}
+		return $alter;
+	}
 }
