@@ -271,7 +271,8 @@ class DboSqlite3 extends DboSource {
 			$fields[$column[0]['name']] = array(
 				'type'		=> $this->column($column[0]['type']),
 				'null'		=> !$column[0]['notnull'],
-				'default'	=> $column[0]['dflt_value'],
+				//'default'	=> $column[0]['dflt_value'],
+				'default'	=> ($column[0]['dflt_value'] == 'NULL' ? NULL : $column[0]['dflt_value']),
 				'length'	=> $this->length($column[0]['type'])
 			);
 			if($column[0]['pk'] == 1) {
@@ -279,7 +280,8 @@ class DboSqlite3 extends DboSource {
 				$fields[$column[0]['name']] = array(
 					'type'		=> $fields[$column[0]['name']]['type'],
 					'null'		=> false,
-					'default'	=> $column[0]['dflt_value'],
+					//'default'	=> $column[0]['dflt_value'],
+					'default'	=> ($column[0]['dflt_value'] == 'NULL' ? NULL : $column[0]['dflt_value']),
 					'key'		=> $this->index['PRI'],
 					'length'=> ($colLength != null) ? $colLength : 11
 				);
