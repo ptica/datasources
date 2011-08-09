@@ -773,7 +773,7 @@ class DboSqlite3 extends DboSource {
 		foreach ($compare as $curTable => $types) {
 			$indexes = $tableParameters = $colList = array();
 			if (!$table || $table == $curTable) {
-				$out .= 'ALTER TABLE ' . $this->fullTableName($curTable) . " \n";
+				$alt_cmd = 'ALTER TABLE ' . $this->fullTableName($curTable) . " \n";
 				foreach ($types as $type => $column) {
 					if (isset($column['indexes'])) {
 						$indexes[$type] = $column['indexes'];
@@ -791,7 +791,7 @@ class DboSqlite3 extends DboSource {
 								if (isset($col['after'])) {
 									$alter .= ' AFTER ' . $this->name($col['after']);
 								}
-								$colList[] = $alter;
+								$colList[] = $alt_cmd.$alter;
 							}
 						break;
 						case 'drop':
@@ -805,14 +805,14 @@ class DboSqlite3 extends DboSource {
 								if (!isset($col['name'])) {
 									$col['name'] = $field;
 								}
-								$colList[] = 'CHANGE ' . $this->name($field) . ' ' . $this->buildColumn($col);
+								//$colList[] = 'CHANGE ' . $this->name($field) . ' ' . $this->buildColumn($col);
 							}
 						break;
 					}
 				}
-				$colList = array_merge($colList, $this->_alterIndexes($curTable, $indexes));
-				$colList = array_merge($colList, $this->_alterTableParameters($curTable, $tableParameters));
-				$out .= "\t" . join(",\n\t", $colList) . ";\n\n";
+				//$colList = array_merge($colList, $this->_alterIndexes($curTable, $indexes));
+				//$colList = array_merge($colList, $this->_alterTableParameters($curTable, $tableParameters));
+				$out .= "\t" . join(";\n", $colList) . ";\n\n";
 			}
 		}
 		return $out;
